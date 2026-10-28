@@ -7,3 +7,24 @@ html[lang=ar] .quick-head p,html[lang=ar] .quick-head h1,html[lang=ar] .quick-ca
 .quick-card .muted,.quick-head .muted,.quick-bottom,.quick-device>.muted{color:var(--cream);opacity:.82}.field-error{margin:2px 0 8px;color:var(--coral);font-size:13px;opacity:1}.quick-card [aria-invalid=true]{border-color:var(--coral)}.quick-card label>bdi{align-self:flex-start}#quick-result{color:var(--cream)}
 
 .pending-list{margin-bottom:30px}.pending-device{display:flex;justify-content:space-between;align-items:center;gap:20px;padding:22px;background:var(--ink2);border:1px solid var(--line);border-radius:16px;margin-top:12px}.pending-device h3{font-size:22px;margin:12px 0 0}.pending-device p{margin:4px 0 0}.activate-pending{min-width:125px;font-size:18px;min-height:54px}.manual-code{margin:25px 0}.manual-code summary{cursor:pointer;color:var(--muted);padding:15px 0}.pending-list .muted{color:var(--cream);opacity:.8}@media(max-width:560px){.pending-device{padding:16px;gap:10px}.pending-device h3{font-size:17px}.activate-pending{min-width:90px}}
+
+/* Keep controls in flow. A sticky header must not paint over scrolled text. */
+html .top{background:var(--ink)!important}
+main{scroll-padding-top:110px;padding-bottom:calc(120px + env(safe-area-inset-bottom,0px))}
+.pending-list{padding-top:16px;scroll-margin-top:110px}
+.pending-list>h2{margin-bottom:8px}
+.pending-actions{display:flex;flex-direction:column;align-items:stretch;gap:8px;flex-shrink:0}
+.pending-actions .delete-device{min-height:44px}
+.quick-found{flex-wrap:wrap}
+.quick-found .delete-device{margin-left:auto;min-height:44px}
+.manual-code summary{padding:20px 0;min-height:60px}
+.manual-code[open] .quick-steps{position:static;flex-wrap:wrap;gap:12px 20px;margin:24px 0 28px;padding:16px 0;line-height:1.8}
+@media(max-width:560px){
+  /* Header remains in document flow on small screens, so headings cannot slide beneath it. */
+  html .top{position:relative}
+  html main{padding-bottom:calc(156px + env(safe-area-inset-bottom,0px));padding-top:18px}
+  .pending-list{padding-top:24px}
+  .manual-code{margin-top:32px;margin-bottom:36px}
+  .pending-device>div:first-child{min-width:0;overflow-wrap:anywhere}
+  .pending-actions{min-width:90px}
+}

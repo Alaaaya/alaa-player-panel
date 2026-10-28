@@ -265,13 +265,14 @@ function renderReseller(devicesOnly) {
     e.stopPropagation(); document.querySelector('.rs-menu')?.remove();
     const d = ds.find((x) => x.id === b.dataset.menu), r = b.getBoundingClientRect();
     const m = document.createElement('div'); m.className = 'rs-menu';
-    m.innerHTML = `<button data-a="open">${t('open')}</button><button data-a="ext">${t('plus1m')}</button><button data-a="tog">${t(d.active ? 'deactivate' : 'activate')}</button>`;
+    m.innerHTML = `<button data-a="open">${t('open')}</button><button data-a="ext">${t('plus1m')}</button><button data-a="tog">${t(d.active ? 'deactivate' : 'activate')}</button><button class="danger" data-a="delete">${t('delete')}</button>`;
     m.style.top = `${r.bottom + 6}px`; m.style[lang === 'ar' ? 'left' : 'right'] = lang === 'ar' ? `${r.left}px` : `${innerWidth - r.right}px`;
     document.body.append(m);
     const off = () => { m.remove(); document.removeEventListener('click', off); }; setTimeout(() => document.addEventListener('click', off));
     m.onclick = async (ev) => {
       const a = ev.target.dataset.a; if (!a) return;
       if (a === 'open') return (location.hash = '#/d/' + d.id);
+      if (a === 'delete') return deleteDevice(d, ev.target);
       let upd;
       if (a === 'ext') { const base = new Date(Math.max(Date.now(), d.expires_at ? +new Date(d.expires_at) : 0)); base.setMonth(base.getMonth() + 1); upd = { expires_at: base.toISOString(), active: true }; }
       else upd = { active: !d.active };
@@ -351,6 +352,23 @@ function addDeviceDialog() {
   });
 }
 
+async function deleteDevice(d, button) {
+  const warning = quickText(
+    `حذف الجهاز ${d.device_code}؟ رح ينحذف ربطه ومفتاحه الخاص. القوائم وبيانات الاشتراك بتبقى محفوظة بدون جهاز. إعادة الربط بتحتاج تسجيل الجهاز من جديد.`,
+    `Delete device ${d.device_code}? Its pairing and private token will be removed. Playlists and subscription details will be kept, unassigned. Reconnecting requires registering the TV again.`
+  );
+  if (!confirm(warning)) return;
+  if (button) button.disabled = true;
+  try {
+    const { data, error } = await sb.rpc('admin_delete_device', { p_device_id: d.id });
+    if (error || data?.status !== 'deleted') return toast(t('delFailed'), true);
+    toast(t('deleted'));
+    if (location.hash.startsWith('#/d/')) location.hash = '#/';
+    else await route();
+  } catch { toast(t('delFailed'), true); }
+  finally { if (button) button.disabled = false; }
+}
+
 /* ---------- device detail ---------- */
 async function renderDevice(id) {
   const [{ data: d, error }, { data: pls, error: plErr }] = await Promise.all([
@@ -414,13 +432,7 @@ async function renderDevice(id) {
     if (error) return toast(error.message, true);
     toast(t('saved')); renderDevice(id);
   };
-  $('#del').onclick = async () => {
-    if (!confirm(t('confirmDelete'))) return;
-    const { error, count } = await sb.from('devices').delete({ count: 'exact' }).eq('id', id);
-    if (error) return toast(error.message, true);
-    if (!count) return toast(t('delFailed'), true);
-    toast(t('deleted')); location.hash = '#/';
-  };
+  $('#del').onclick = (e) => deleteDevice(d, e.currentTarget);
   const openNew = () => plErr ? toast(t('plLoadErr'), true) : playlistDialog(id, null, (pls || []).length);
   $('#addpl2').onclick = openNew;
   $('#addpl-form').onclick = openNew;
@@ -532,11 +544,19 @@ function polishQuickText() {
 }
 const quickText = (ar, en) => getLang() === 'ar' ? ar : en;
 let quickRefreshTimer;
+function bindDeviceDeletes() {
+  app.querySelectorAll('[data-delete-device]').forEach(button => {
+    button.onclick = () => {
+      const d = state.devices.find(d => d.id === button.dataset.deleteDevice);
+      if (d) deleteDevice(d, button);
+    };
+  });
+}
 function renderQuick() {
   clearTimeout(quickRefreshTimer);
   app.innerHTML = shell(`
     <section class="quick-head"><div><p class="eyebrow">ALAA / DEVICE PANEL</p><h1>${quickText('أجهزتك وصلت. فعّل وابدأ.','Your TVs are here. Activate and start.')}</h1><p class="muted">${quickText('شغّل التطبيق على التلفزيون، والجهاز بيظهر هون لحاله.','Open the TV app. Your device appears here automatically.')}</p></div><a class="btn ghost" href="#/devices">${t('devices')} · ${state.devices.length}</a></section>
-    <section class="pending-list"><h2 dir="auto">${quickText('بانتظار التفعيل','Awaiting activation')}</h2><p class="muted" dir="auto">${quickText('اضغط تفعيل وأضف الاشتراك. الكود للتعرّف على الجهاز فقط.','Press Activate and add a subscription. The code identifies the TV only.')}</p>${state.devices.filter(d => status(d)==='pending' && Date.now()-new Date(d.created_at)<DAY).map(d => `<article class="pending-device"><div><span class="app-label">${d.app_type==='universe'?'universe':'Alaa Player'}</span><h3 class="mono">${esc(d.device_code)}</h3><p class="muted" dir="auto">${esc(d.model||'TV')} · ${ago(d.created_at)}</p></div><button class="btn primary activate-pending" data-quick="${esc(d.device_code)}">${quickText('تفعيل','Activate')}</button></article>`).join('') || `<p class="muted" dir="auto">${quickText('ما في أجهزة جديدة. شغّل التطبيق لتظهر هون.','No new devices. Open the app on your TV.')}</p>`}</section>
+    <section class="pending-list"><h2 dir="auto">${quickText('بانتظار التفعيل','Awaiting activation')}</h2><p class="muted" dir="auto">${quickText('اضغط تفعيل وأضف الاشتراك. الكود للتعرّف على الجهاز فقط.','Press Activate and add a subscription. The code identifies the TV only.')}</p>${state.devices.filter(d => status(d)==='pending' && Date.now()-new Date(d.created_at)<DAY).map(d => `<article class="pending-device"><div><span class="app-label">${d.app_type==='universe'?'universe':'Alaa Player'}</span><h3 class="mono">${esc(d.device_code)}</h3><p class="muted" dir="auto">${esc(d.model||'TV')} · ${ago(d.created_at)}</p></div><div class="pending-actions"><button class="btn primary activate-pending" data-quick="${esc(d.device_code)}">${quickText('تفعيل','Activate')}</button><button class="btn danger ghost delete-device" data-delete-device="${d.id}">${t('delete')}</button></div></article>`).join('') || `<p class="muted" dir="auto">${quickText('ما في أجهزة جديدة. شغّل التطبيق لتظهر هون.','No new devices. Open the app on your TV.')}</p>`}</section>
     <details class="manual-code"><summary dir="auto">${quickText('بحث بكود جهاز قديم','Find an existing device by code')}</summary>
     <div class="quick-steps"><span class="on">01 ${t('deviceCode')}</span><span>02 ${quickText('الاشتراك','Subscription')}</span><span>03 ${t('save')}</span></div>
     <section class="card quick-card"><form id="lookup"><label for="quick-code">${quickText('الكود اللي ظاهر على التلفزيون','Code shown on your TV')}</label><div class="row"><input id="quick-code" name="code" dir="ltr" class="mono" placeholder="A1B2C3D4E5F6" maxlength="64" autocomplete="off" required><button class="btn primary">${quickText('فتح الجهاز','Open device')}</button></div><p class="muted sm">${quickText('شغّل التطبيق أولاً. الأجهزة الجديدة تظهر باسم universe.','Open the app first. New app devices are labeled universe.')}</p><p id="quick-error" class="err" role="alert"></p></form><div id="quick-sub"></div></section>
@@ -545,6 +565,7 @@ function renderQuick() {
     <section class="quick-recent"><h2>${t('recent')}</h2>${state.devices.slice(0,3).map(d => `<button class="quick-device" data-quick="${esc(d.device_code)}"><span class="mono">${esc(d.device_code)}</span><span class="app-label">${d.app_type === 'universe' ? 'universe' : 'Alaa Player'}</span><span class="muted">${esc(d.customer || d.model || '')}</span>${badge(status(d))}</button>`).join('')}</section>
   `);
   polishQuickText();
+  bindDeviceDeletes();
   const lookup = $('#lookup');
   lookup.onsubmit = async e => {
     e.preventDefault();
@@ -557,8 +578,9 @@ function renderQuick() {
     const { data: playlists, error } = await sb.from('playlists').select('*').eq('device_id', d.id).order('position').order('created_at');
     if (error) { $('#quick-error').textContent = t('plLoadErr'); return; }
     let pl = playlists?.[0];
-    $('#quick-sub').innerHTML = `<div class="quick-found"><span class="app-label">${d.app_type === 'universe' ? 'universe' : 'Alaa Player'}</span><b class="mono">${esc(d.device_code)}</b>${badge(status(d))}</div><form id="quick-form"><h2>${quickText('أضف الاشتراك','Add subscription')}</h2><p class="muted sm">${quickText('الحفظ يفعّل الجهاز. القوائم الإضافية تبقى مثل ما هي.','Saving activates the TV. Other playlists remain unchanged.')}</p><div class="seg"><label><input type="radio" name="type" value="xtream" ${!pl || pl.type === 'xtream' ? 'checked' : ''}><span>Xtream</span></label><label><input type="radio" name="type" value="m3u" ${pl?.type === 'm3u' ? 'checked' : ''}><span>M3U</span></label></div><div class="t-xtream"><label>${t('server')}<input name="server" dir="ltr" value="${esc(pl?.server)}" placeholder="https://provider.example:8080"></label><div class="grid2"><label>${t('username')}<input name="username" dir="ltr" value="${esc(pl?.username)}" autocomplete="off"></label><label>${t('password')}<input name="password" type="password" dir="ltr" value="${esc(pl?.password)}" autocomplete="new-password"></label></div></div><div class="t-m3u"><label>${t('url')}<input name="url" dir="ltr" value="${esc(pl?.url)}" placeholder="https://provider.example/list.m3u"></label></div><button class="btn primary wide">${quickText('حفظ الاشتراك وتفعيل الجهاز','Save subscription and activate TV')}</button><p id="quick-result" role="status" aria-live="polite"></p></form>`;
+    $('#quick-sub').innerHTML = `<div class="quick-found"><span class="app-label">${d.app_type === 'universe' ? 'universe' : 'Alaa Player'}</span><b class="mono">${esc(d.device_code)}</b>${badge(status(d))}<button class="btn danger ghost delete-device" data-delete-device="${d.id}">${t('delete')}</button></div><form id="quick-form"><h2>${quickText('أضف الاشتراك','Add subscription')}</h2><p class="muted sm">${quickText('الحفظ يفعّل الجهاز. القوائم الإضافية تبقى مثل ما هي.','Saving activates the TV. Other playlists remain unchanged.')}</p><div class="seg"><label><input type="radio" name="type" value="xtream" ${!pl || pl.type === 'xtream' ? 'checked' : ''}><span>Xtream</span></label><label><input type="radio" name="type" value="m3u" ${pl?.type === 'm3u' ? 'checked' : ''}><span>M3U</span></label></div><div class="t-xtream"><label>${t('server')}<input name="server" dir="ltr" value="${esc(pl?.server)}" placeholder="https://provider.example:8080"></label><div class="grid2"><label>${t('username')}<input name="username" dir="ltr" value="${esc(pl?.username)}" autocomplete="off"></label><label>${t('password')}<input name="password" type="password" dir="ltr" value="${esc(pl?.password)}" autocomplete="new-password"></label></div></div><div class="t-m3u"><label>${t('url')}<input name="url" dir="ltr" value="${esc(pl?.url)}" placeholder="https://provider.example/list.m3u"></label></div><button class="btn primary wide">${quickText('حفظ الاشتراك وتفعيل الجهاز','Save subscription and activate TV')}</button><p id="quick-result" role="status" aria-live="polite"></p></form>`;
     polishQuickText();
+    bindDeviceDeletes();
     const form = $('#quick-form');
     const sync = () => {form.dataset.type = form.elements.type.value;};
     form.querySelectorAll('[name=type]').forEach(r => r.onchange = sync); sync();
