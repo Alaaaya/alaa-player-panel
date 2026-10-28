@@ -117,4 +117,11 @@ end $$;
 revoke all on function public.register_device_v2(text,text,text,text),public.get_device_config_v2(text,text),public.get_device_config(text),public.register_device(text,text,text),public.admin_pair_legacy_device(uuid,text),public.admin_revoke_device_token(uuid),public.admin_save_subscription(uuid,uuid,jsonb) from public,anon,authenticated;
 grant execute on function public.register_device_v2(text,text,text,text),public.get_device_config_v2(text,text),public.get_device_config(text),public.register_device(text,text,text) to anon,authenticated;
 grant execute on function public.admin_pair_legacy_device(uuid,text),public.admin_revoke_device_token(uuid),public.admin_save_subscription(uuid,uuid,jsonb) to authenticated;
+-- Production inventory exposed TRUNCATE via legacy default privileges; RLS does not protect TRUNCATE.
+-- Give the browser only the operations its admin-gated policies require.
+revoke all on public.admins,public.devices,public.playlists from public,anon,authenticated;
+grant select on public.admins to authenticated;
+grant select,insert,update,delete on public.devices,public.playlists to authenticated;
+revoke execute on function public.is_admin() from public,anon;
+grant execute on function public.is_admin() to authenticated;
 commit;
