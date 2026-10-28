@@ -1,7 +1,15 @@
-# Device API v2 · local proposal, not deployed
+# Device API v2 · live verified, 2026-10-28
 
 ## Backend verification
-Production GitHub Pages main 78b2e11 embeds https://jytjcdlmygwqizgydeyp.supabase.co, NOT czrypjsgjjmjzyyjhyxd. Public GET /auth/v1/health returned 200 with the bundled anon key, reporting GoTrue v2.197.0. The old project is reachable; these checks do not prove database availability or its dashboard pause status. REST root without key returned 401/no key; with anon returned 401/service-role-only. No device config RPC or write was called. Management PAT returned 401 Unauthorized. Do not switch projects based on the account list.
+Live original project https://jytjcdlmygwqizgydeyp.supabase.co. The v2 migration has been committed to this project and tested through its real public REST endpoints. No migration to czrypjsgjjmjzyyjhyxd occurred. Actual API tests verified pending registration, admin-only atomic activation, authorized dummy-provider retrieval, wrong/missing token denial, legacy code-only lockout, inactive/expired secrecy, rate limits and effective database privileges. Original devices/playlists remain intact; old code-only clients must upgrade and re-pair.
+
+Public anon key (intended for both TV apps, not a service key)
+
+```text
+eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp5dGpjZGxteWd3cWl6Z3lkZXlwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTEwMzQzODUsImV4cCI6MjEwNjYxMDM4NX0.zcr_TaxhweaScYeHxuSNzwBtHj0cgkp9JSfbsmkIr4Y
+```
+
+GitHub Pages panel https://alaaaya.github.io/alaa-player-panel/ uses this same original project. SQL is deployed and verified; Pages rollout is recorded separately in DEPLOYMENT-FINAL.md. Never embed the Management PAT, service-role key, admin password or backups in either app.
 
 ## Requests
 HTTPS POST {project}/rest/v1/rpc/{function}. Headers apikey: public anon key, Content-Type: application/json. Do not place device tokens in URLs, analytics, screenshots or logs. Do not embed a service role key in either app or panel.
@@ -28,8 +36,10 @@ admin_pair_legacy_device {p_device_id:UUID,p_device_token:64-char-token} binds o
 ## Existing Alaa Player migration
 Existing device UUIDs, short codes, playlists, activity and expiry are preserved. Update the old Alaa Player client to generate/store tokens and call v2, then physically verify and bind its token through authenticated admin tooling. Android universe can register itself through v2. Existing legacy installations must be upgraded/coordinated BEFORE deploying the lockdown, or they lose remote refresh. It is impossible to both keep a code-only credential oracle publicly working and claim this leak is fixed. The old code-only functions become upgrade_required with no playlists. The panel still manages legacy device records.
 
-## Required deployment gate
-Do NOT deploy this UI alone: its simplified Save depends on admin_save_subscription. Do NOT apply SQL alone without updated clients and owner's coordinated migration plan. Parent/owner must approve screenshot and migration. Obtain access to the ACTUAL old project's Supabase dashboard, back up data/function definitions/grants, and verify live schema matches local migration assumptions. The management PAT supplied is unauthorized; a valid owner session/token with access to old project is required. No backup of live DB has been obtained yet, so this is a blocker, not completed protection.
+## Deployment and recovery
+Owner approved the coordinated lockdown and accepts legacy client upgrade/re-pair. An owner-authorized application logical backup was taken via the Management SQL API before writes. All public tables, DDL, functions, grants, policies, defaults and dependencies were captured privately and restored into isolated PostgreSQL16. Exact public data and objects verified; the compatibility test omits PostgreSQL17-only MAINTAIN grants, while the original PG17 restore script retains them. This is not a full managed-Supabase-cluster backup. Private restore paths and hashes are in the operator deployment report, never in the Pages payload.
+
+Old device UUIDs, codes, playlists, activity and expiry were preserved. The live legacy RPC returns only {"status":"upgrade_required","api_version":2}. New universe clients auto-register pending. Existing Alaa Player clients still require the separate signed app release and physically verified admin re-pair; deploying this panel does not update TV binaries.
 
 ## Rate-limit boundary
 SQL budgets are atomic and have bounded key creation (only valid devices get a per-device budget; failed guesses share one bucket). They limit credential responses and registration growth, but do NOT prevent bandwidth/DB-load denial-of-service or anonymous attackers exhausting the global registration budget. Configure Supabase gateway/Edge or external WAF per-IP throttling before public rollout. Secrets hash with native PostgreSQL SHA256, never stored plaintext in token table; provider credentials remain in RLS-protected playlists and are necessarily delivered to authorized TVs.
@@ -42,4 +52,46 @@ On first TV launch create and securely persist random display code + 256-bit tok
 
 Unactivated, playlist-free registrations expire after 24h. Config then returns registration_expired. Registration sweeps expired pending records and token hashes; active devices and devices with playlists are not deleted. This is lazy expiry/cleanup rather than a cron job; the panel hides expired pending rows immediately. Registration attempts with another device's token/code cannot claim that row. A registration_expired TV may delete its stale local pending identity and generate a fresh code/token, only after confirming it was never activated. Expiry cleanup does not apply to active subscriptions. Global registration limits also cap new DB rows; edge/IP controls still required against abuse.
 
-This panel change does NOT modify either TV app binary. Android universe must implement these launch/register/token requests against the deployed v2 contract. Legacy Alaa Player requires its own client upgrade and verified admin token binding. Until both client and SQL are released, auto-discovery is demonstrated with local fixtures only.
+This panel deployment does NOT modify either TV app binary. Automatic registration, pending discovery and admin activation were verified against the real backend using an isolated dummy device. Android universe and legacy Alaa Player must ship their separate client upgrades against this live v2 contract. No claim of real TV hardware testing is made.
+
+## Exact live response shapes
+
+JSON object order is not significant. UUIDs, dates, codes and subscription values vary. Field names and nullability below were verified live using a dummy provider, not customer credentials.
+
+register_device_v2 success
+```json
+{"status":"registered","device_code":"A1B2C3D4E5F6","app_type":"universe"}
+```
+get_device_config_v2 pending
+```json
+{"status":"pending","device_code":"A1B2C3D4E5F6","app_type":"universe","pending_expires_at":"2026-10-29T09:54:21.650419+00:00"}
+```
+get_device_config_v2 active
+```json
+{"status":"active","device_code":"A1B2C3D4E5F6","app_type":"universe","expires_at":null,"playlists":[{"id":"00000000-0000-0000-0000-000000000000","name":"Subscription","type":"xtream","url":null,"epg_url":null,"server":"https://provider.invalid","username":"dummy-user","password":"dummy-password"}]}
+```
+get_device_config_v2 inactive
+```json
+{"status":"inactive","device_code":"A1B2C3D4E5F6","app_type":"universe","pending_expires_at":"2026-10-29T09:54:21.650419+00:00"}
+```
+The inactive response includes pending_expires_at even when playlists exist; it does not mean those subscription rows are deleted. Only unactivated playlist-free registration rows are swept after 24h.
+
+get_device_config_v2 expired
+```json
+{"status":"expired","device_code":"A1B2C3D4E5F6","expires_at":"2026-10-27T09:54:21.650419+00:00"}
+```
+Credential-free status-only responses
+```json
+{"status":"unauthorized"}
+```
+```json
+{"status":"registration_expired"}
+```
+```json
+{"status":"rate_limited","retry_after":60}
+```
+Registration can also return {"status":"invalid"}, {"status":"unavailable"}, or {"status":"rate_limited","retry_after":3600}. These statuses do not include a playlist. Registration returns registered even if an existing bound device is active; call get_device_config_v2 for current state.
+
+Admin save success returns {"status":"saved","playlist_id":"<uuid>"}. Nonadmins get HTTP403 for admin RPCs; anon without execute grants gets HTTP401/403, never a playlist. Omitting p_device_token entirely is an HTTP404 PostgREST function-resolution failure; sending an empty/wrong token returns HTTP200 with status unauthorized. Legacy get_device_config and register_device return {"status":"upgrade_required","api_version":2} without device metadata or playlists.
+
+WAF/IP-level DoS controls are not configured by this deployment. Per-device rate behavior was verified by seeding ONLY a disposable test device's private budget then fetching config; global anonymous budgets were not exhaustion-tested on production. No legacy migration token is transferred through the public code field.
