@@ -1,0 +1,20 @@
+{
+  "name": "alaa-panel",
+  "version": "1.0.0",
+  "description": "",
+  "type": "module",
+  "scripts": {
+    "test": "node --test src/playlist.test.js",
+    "test:e2e": "vite build --mode e2e && node e2e/playlists.e2e.mjs"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "playwright-core": "^1.64.1",
+    "vite": "^8.3.1"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.117.2"
+  }
+}

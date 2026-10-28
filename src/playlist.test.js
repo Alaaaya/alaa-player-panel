@@ -1,0 +1,10 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import { validatePlaylist as v, isHttpUrl } from './playlist.js';
+test('url check', () => { assert.ok(isHttpUrl('http://a.b/x')); assert.ok(!isHttpUrl('ftp://a.b')); assert.ok(!isHttpUrl('abc')); assert.ok(!isHttpUrl('')); });
+test('m3u ok and trimmed', () => { const r = v({ type: 'm3u', name: ' A ', url: ' http://x.y/p.m3u ' }, 'd'); assert.equal(r.row.url, 'http://x.y/p.m3u'); assert.equal(r.row.name, 'A'); assert.equal(r.row.server, null); });
+test('m3u bad url', () => assert.equal(v({ type: 'm3u', name: 'A', url: 'x' }, 'd').field, 'url'));
+test('whitespace name', () => assert.equal(v({ type: 'm3u', name: '  ', url: 'http://a.b' }, 'd').error, 'errName'));
+test('xtream ok strips slash', () => assert.equal(v({ type: 'xtream', name: 'A', server: 'http://h:80//', username: 'u', password: 'p' }, 'd').row.server, 'http://h:80'));
+test('xtream missing pass', () => assert.equal(v({ type: 'xtream', name: 'A', server: 'http://h', username: 'u', password: ' ' }, 'd').error, 'errPass'));
+test('bad epg', () => assert.equal(v({ type: 'm3u', name: 'A', url: 'http://a.b', epg_url: 'zz' }, 'd').field, 'epg_url'));
