@@ -17,7 +17,7 @@ let failures = 0;
 function backend(opts = {}) {
   const db = { playlists: [], seq: 0 };
   const log = [];
-  const dev = { app_type: 'universe', id: 'dev-1', device_code: 'MOCK01', mac: null, customer: 'Fixture', note: null, active: true, expires_at: null, last_seen: null, model: null, created_at: '2026-01-01T00:00:00Z' };
+  const dev = { app_type: 'universe', id: 'dev-1', device_code: 'MOCK01', mac: null, customer: 'Fixture', note: null, active: false, expires_at: null, last_seen: null, model: null, created_at: new Date().toISOString() };
   return { db, log, handle: async (route) => {
     const req = route.request(); const u = new URL(req.url()); const m = req.method();
     const json = (b, status = 200, h = {}) => route.fulfill({ status, contentType: 'application/json', headers: { 'access-control-allow-origin': '*', 'access-control-expose-headers': 'content-range', ...h }, body: JSON.stringify(b) });
@@ -71,9 +71,14 @@ try {
 for (const lang of ['ar','en']) for (const vp of [{width:1440,height:1000},{width:390,height:844}]) {
  const {ctx,page,be,errs}=await open(lang,'classic',{},vp);
  await page.goto('http://localhost:'+PORT+'/#/');
- await page.waitForSelector('#quick-code');
+ await page.waitForSelector('#quick-code',{state:'attached'});
+ await page.locator('.manual-code').evaluate(el=>el.open=true);
  assert.equal(await page.getAttribute('html','dir'),'ltr');
  assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1));
+ await page.locator('.manual-code').evaluate(el=>el.open=false);
+ await page.screenshot({path:'/home/kit/tmp/panel/'+lang+'-'+vp.width+'-pending.png',fullPage:true});
+ await page.click('.activate-pending'); await page.waitForSelector('#quick-form');
+ assert.equal(be.db.playlists.length,0,'Activate alone does not prematurely activate');
  await page.screenshot({path:'/home/kit/tmp/panel/'+lang+'-'+vp.width+'-code.png',fullPage:true});
  await page.fill('#quick-code','WRONGCODE'); await page.click('#lookup button');
  assert.ok((await page.locator('#quick-error').textContent()).length>0);
@@ -83,6 +88,9 @@ for (const lang of ['ar','en']) for (const vp of [{width:1440,height:1000},{widt
  await page.fill('#quick-form [name=server]','not a url');
  await page.click('#quick-form button');
  assert.equal(be.db.playlists.length,0);
+ assert.equal(await page.getAttribute('#quick-form [name=server]','aria-invalid'),'true');
+ assert.ok(await page.locator('#error-server').isVisible());
+ await page.screenshot({path:'/home/kit/tmp/panel/'+lang+'-'+vp.width+'-validation.png',fullPage:true});
  await page.fill('#quick-form [name=server]','https://provider.example:8080');
  await page.fill('#quick-form [name=username]','tv-subscription');
  await page.fill('#quick-form [name=password]','fixture-only');
@@ -103,7 +111,8 @@ for (const lang of ['ar','en']) for (const vp of [{width:1440,height:1000},{widt
  await ctx.close();
 }
 const {ctx,page,be}=await open('ar','classic',{saveError:true});
-await page.goto('http://localhost:'+PORT+'/#/');await page.waitForSelector('#quick-code');
+await page.goto('http://localhost:'+PORT+'/#/');await page.waitForSelector('#quick-code',{state:'attached'});
+ await page.locator('.manual-code').evaluate(el=>el.open=true);
 await page.fill('#quick-code','MOCK01');await page.click('#lookup button');await page.waitForSelector('#quick-form');
 await page.click('#quick-form .seg label:has(input[value=m3u])');await page.fill('#quick-form [name=url]','https://provider.example/list.m3u');await page.click('#quick-form button');
 await page.waitForFunction(()=>document.querySelector('#quick-result')?.textContent.includes('ما تم الحفظ'));

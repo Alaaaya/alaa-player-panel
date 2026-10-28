@@ -3,3 +3,7 @@
 /* Arabic prose isolates its punctuation without mirroring any layout. */
 html[lang=ar] .quick-head p,html[lang=ar] .quick-head h1,html[lang=ar] .quick-card p,html[lang=ar] .quick-card h2,html[lang=ar] .quick-card label{unicode-bidi:plaintext;text-align:start}
 .quick-card label{color:var(--cream)}
+
+.quick-card .muted,.quick-head .muted,.quick-bottom,.quick-device>.muted{color:var(--cream);opacity:.82}.field-error{margin:2px 0 8px;color:var(--coral);font-size:13px;opacity:1}.quick-card [aria-invalid=true]{border-color:var(--coral)}.quick-card label>bdi{align-self:flex-start}#quick-result{color:var(--cream)}
+
+.pending-list{margin-bottom:30px}.pending-device{display:flex;justify-content:space-between;align-items:center;gap:20px;padding:22px;background:var(--ink2);border:1px solid var(--line);border-radius:16px;margin-top:12px}.pending-device h3{font-size:22px;margin:12px 0 0}.pending-device p{margin:4px 0 0}.activate-pending{min-width:125px;font-size:18px;min-height:54px}.manual-code{margin:25px 0}.manual-code summary{cursor:pointer;color:var(--muted);padding:15px 0}.pending-list .muted{color:var(--cream);opacity:.8}@media(max-width:560px){.pending-device{padding:16px;gap:10px}.pending-device h3{font-size:17px}.activate-pending{min-width:90px}}

@@ -12,7 +12,7 @@ do $$ declare r jsonb; begin
  r:=public.get_device_config('A1B2C3D4E5F6');
  assert r->>'status'='upgrade_required' and not r ? 'playlists','legacy no credentials';
  r:=public.get_device_config_v2('A1B2C3D4E5F6',repeat('a',64));
- assert r->>'status'='inactive' and not r ? 'playlists','inactive no credentials';
+ assert r->>'status'='pending' and not r ? 'playlists','inactive no credentials';
  begin perform 1 from device_private.tokens; raise exception 'table leaked'; exception when insufficient_privilege then null; end;
  begin perform public.admin_save_subscription(gen_random_uuid(),null,'{}'); raise exception 'admin RPC allowed'; exception when insufficient_privilege then null; end;
 end $$;

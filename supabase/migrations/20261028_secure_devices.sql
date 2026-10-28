@@ -31,6 +31,8 @@ returns jsonb language plpgsql security definer set search_path=pg_catalog,publi
 declare d public.devices; h bytea; existing bytea; code text := upper(trim(p_device_code));
 begin
  if code is null or code !~ '^[A-F0-9]{12}$' or p_device_token is null or p_device_token !~ '^[a-f0-9]{64}$' or p_app_type not in ('alaa_player','universe') or p_app_type is null then return jsonb_build_object('status','invalid'); end if;
+ -- Expired pending rows are removed on registration; active subscriptions are never swept.
+ delete from public.devices dv using device_private.tokens tk where tk.device_id=dv.id and not dv.active and tk.paired_at < now()-interval '24 hours' and not exists(select 1 from public.playlists p where p.device_id=dv.id);
  h := sha256(convert_to(p_device_token,'UTF8'));
  select * into d from public.devices where device_code=code;
  if d.id is not null then
@@ -61,7 +63,8 @@ begin
  end if;
  if not device_private.take_budget('device:'||d.id,30,60) then return jsonb_build_object('status','rate_limited','retry_after',60); end if;
  update public.devices set last_seen=now() where id=d.id;
- if not d.active then return jsonb_build_object('status','inactive','device_code',d.device_code,'app_type',d.app_type); end if;
+ if not d.active and d.created_at < now()-interval '24 hours' and not exists(select 1 from public.playlists where device_id=d.id) then return jsonb_build_object('status','registration_expired'); end if;
+ if not d.active then return jsonb_build_object('status',case when not exists(select 1 from public.playlists where device_id=d.id) then 'pending' else 'inactive' end,'device_code',d.device_code,'app_type',d.app_type,'pending_expires_at',d.created_at+interval '24 hours'); end if;
  if d.expires_at is not null and d.expires_at < now() then return jsonb_build_object('status','expired','device_code',d.device_code,'expires_at',d.expires_at); end if;
  return jsonb_build_object('status','active','device_code',d.device_code,'app_type',d.app_type,'expires_at',d.expires_at,'playlists',coalesce((select jsonb_agg(jsonb_build_object('id',p.id,'name',p.name,'type',p.type,'url',p.url,'epg_url',p.epg_url,'server',p.server,'username',p.username,'password',p.password) order by p.position,p.created_at) from public.playlists p where p.device_id=d.id),'[]'::jsonb));
 end $$;
