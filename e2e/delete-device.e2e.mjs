@@ -17,7 +17,7 @@ for(const theme of ['classic','cinema','arcade','aurora','royal','reseller','tha
  await ctx.route(host+'/**',async r=>{
   const req=r.request(),u=new URL(req.url());const json=(b,status=200)=>r.fulfill({status,contentType:'application/json',headers:{'access-control-allow-origin':'*','access-control-allow-headers':'*'},body:JSON.stringify(b)});
   if(req.method()==='OPTIONS')return r.fulfill({status:204,headers:{'access-control-allow-origin':'*','access-control-allow-headers':'*','access-control-allow-methods':'*'}});
-  if(u.pathname.endsWith('/rpc/admin_delete_device')){calls++;const b=JSON.parse(req.postData());if(mode==='error')return json({message:'Forbidden'},403);if(mode==='deleted')ds=ds.filter(d=>d.id!==b.p_device_id);return json({status:mode,preserved_playlists:1})}
+  if(u.pathname.endsWith('/rpc/admin_delete_device')){calls++;const b=JSON.parse(req.postData());if(mode==='error')return json({message:'Forbidden'},403);if(mode==='deleted')ds=ds.filter(d=>d.id!==b.p_device_id);return json({status:mode,deleted_playlists:1})}
   if(u.pathname.endsWith('/admins'))return json({user_id:'u-1'});
   if(u.pathname.endsWith('/devices')){const id=u.searchParams.get('id')?.replace('eq.','');return json(id?ds.find(d=>d.id===id):ds)}
   if(u.pathname.endsWith('/playlists'))return json([]);
@@ -33,7 +33,7 @@ for(const theme of ['classic','cinema','arcade','aurora','royal','reseller','tha
  assert.equal(await p.locator('.quick-steps').evaluate(e=>getComputedStyle(e).position),'static');
  await p.evaluate(()=>window.scrollTo(0,0));
  if(theme==='classic'&&lang==='ar')await p.screenshot({path:'/home/kit/tmp/panel/delete-fix/mock-ar-'+width+'.png',fullPage:true});
- p.once('dialog',d=>{assert.ok(d.message().includes('MOCK0'));d.dismiss()});
+ p.once('dialog',d=>{assert.ok(d.message().includes('MOCK0'));assert.ok(d.message().includes(lang==='ar'?'رح ينحذف الجهاز وبيانات اشتراكه نهائياً.':'The device and its subscription details will be permanently deleted.'));assert.ok(d.message().includes(lang==='ar'?'أي اشتراك مرتبط بجهاز تاني بيبقى محفوظ.':'Subscriptions linked to another device will be kept.'));d.dismiss()});
  await p.locator('[data-delete-device="dev-0"]').click();assert.equal(calls,0);
  p.once('dialog',d=>d.accept());await p.locator('[data-delete-device="dev-0"]').click();await p.waitForFunction(()=>document.querySelectorAll('.pending-device').length===3);assert.equal(calls,1);
  // Active editor entry, cancel, failed response, not_found, then successful delete.

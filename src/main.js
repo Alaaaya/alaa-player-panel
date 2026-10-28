@@ -354,8 +354,8 @@ function addDeviceDialog() {
 
 async function deleteDevice(d, button) {
   const warning = quickText(
-    `حذف الجهاز ${d.device_code}؟ رح ينحذف ربطه ومفتاحه الخاص. القوائم وبيانات الاشتراك بتبقى محفوظة بدون جهاز. إعادة الربط بتحتاج تسجيل الجهاز من جديد.`,
-    `Delete device ${d.device_code}? Its pairing and private token will be removed. Playlists and subscription details will be kept, unassigned. Reconnecting requires registering the TV again.`
+    `حذف الجهاز ${d.device_code}؟ رح ينحذف الجهاز وبيانات اشتراكه نهائياً. أي اشتراك مرتبط بجهاز تاني بيبقى محفوظ. إعادة الربط بتحتاج تسجيل الجهاز من جديد.`,
+    `Delete device ${d.device_code}? The device and its subscription details will be permanently deleted. Subscriptions linked to another device will be kept. Reconnecting requires registering the TV again.`
   );
   if (!confirm(warning)) return;
   if (button) button.disabled = true;
