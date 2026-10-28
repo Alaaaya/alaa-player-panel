@@ -19,6 +19,7 @@ function toast(msg, bad) {
 
 const DAY = 864e5;
 function status(d) {
+  if (!d.active && !(d.playlists?.[0]?.count) && !d.expires_at) return 'pending';
   if (!d.active) return d.last_seen || d.customer || d.expires_at ? 'inactive' : 'pending';
   if (d.expires_at) {
     const left = new Date(d.expires_at) - Date.now();
@@ -521,15 +522,29 @@ function renderSettings(session) {
 }
 
 /* Simple entry point. Advanced device management and all existing themes stay available. */
+function polishQuickText() {
+  app.querySelectorAll('.quick-head h1,.quick-head p,.quick-card p,.quick-card h2,.quick-bottom a,.quick-recent h2').forEach(el => el.dir = 'auto');
+  app.querySelectorAll('.quick-card label').forEach(el => {
+    [...el.childNodes].filter(n => n.nodeType === 3 && n.textContent.trim()).forEach(n => {
+      const bdi = document.createElement('bdi'); bdi.dir = 'auto'; bdi.textContent = n.textContent; n.replaceWith(bdi);
+    });
+  });
+}
 const quickText = (ar, en) => getLang() === 'ar' ? ar : en;
+let quickRefreshTimer;
 function renderQuick() {
+  clearTimeout(quickRefreshTimer);
   app.innerHTML = shell(`
-    <section class="quick-head"><div><p class="eyebrow">ALAA / DEVICE PANEL</p><h1>${quickText('اربط جهازك، وأضف اشتراكك','Connect a TV. Add a subscription.')}</h1><p class="muted">${quickText('كود الجهاز، بيانات الاشتراك، حفظ. وبس.','Device code, subscription, save. That’s it.')}</p></div><a class="btn ghost" href="#/devices">${t('devices')} · ${state.devices.length}</a></section>
+    <section class="quick-head"><div><p class="eyebrow">ALAA / DEVICE PANEL</p><h1>${quickText('أجهزتك وصلت. فعّل وابدأ.','Your TVs are here. Activate and start.')}</h1><p class="muted">${quickText('شغّل التطبيق على التلفزيون، والجهاز بيظهر هون لحاله.','Open the TV app. Your device appears here automatically.')}</p></div><a class="btn ghost" href="#/devices">${t('devices')} · ${state.devices.length}</a></section>
+    <section class="pending-list"><h2 dir="auto">${quickText('بانتظار التفعيل','Awaiting activation')}</h2><p class="muted" dir="auto">${quickText('اضغط تفعيل وأضف الاشتراك. الكود للتعرّف على الجهاز فقط.','Press Activate and add a subscription. The code identifies the TV only.')}</p>${state.devices.filter(d => status(d)==='pending' && Date.now()-new Date(d.created_at)<DAY).map(d => `<article class="pending-device"><div><span class="app-label">${d.app_type==='universe'?'universe':'Alaa Player'}</span><h3 class="mono">${esc(d.device_code)}</h3><p class="muted" dir="auto">${esc(d.model||'TV')} · ${ago(d.created_at)}</p></div><button class="btn primary activate-pending" data-quick="${esc(d.device_code)}">${quickText('تفعيل','Activate')}</button></article>`).join('') || `<p class="muted" dir="auto">${quickText('ما في أجهزة جديدة. شغّل التطبيق لتظهر هون.','No new devices. Open the app on your TV.')}</p>`}</section>
+    <details class="manual-code"><summary dir="auto">${quickText('بحث بكود جهاز قديم','Find an existing device by code')}</summary>
     <div class="quick-steps"><span class="on">01 ${t('deviceCode')}</span><span>02 ${quickText('الاشتراك','Subscription')}</span><span>03 ${t('save')}</span></div>
     <section class="card quick-card"><form id="lookup"><label for="quick-code">${quickText('الكود اللي ظاهر على التلفزيون','Code shown on your TV')}</label><div class="row"><input id="quick-code" name="code" dir="ltr" class="mono" placeholder="A1B2C3D4E5F6" maxlength="64" autocomplete="off" required><button class="btn primary">${quickText('فتح الجهاز','Open device')}</button></div><p class="muted sm">${quickText('شغّل التطبيق أولاً. الأجهزة الجديدة تظهر باسم universe.','Open the app first. New app devices are labeled universe.')}</p><p id="quick-error" class="err" role="alert"></p></form><div id="quick-sub"></div></section>
+    </details><div id="pending-editor"></div>
     <div class="quick-bottom"><a href="#/devices">${quickText('إدارة الأجهزة القديمة والتفاصيل','Existing devices and advanced details')}</a><a href="#/settings">${t('settings')}</a></div>
     <section class="quick-recent"><h2>${t('recent')}</h2>${state.devices.slice(0,3).map(d => `<button class="quick-device" data-quick="${esc(d.device_code)}"><span class="mono">${esc(d.device_code)}</span><span class="app-label">${d.app_type === 'universe' ? 'universe' : 'Alaa Player'}</span><span class="muted">${esc(d.customer || d.model || '')}</span>${badge(status(d))}</button>`).join('')}</section>
   `);
+  polishQuickText();
   const lookup = $('#lookup');
   lookup.onsubmit = async e => {
     e.preventDefault();
@@ -538,10 +553,12 @@ function renderQuick() {
     $('#quick-sub').innerHTML = '';
     $('#quick-error').textContent = d ? '' : quickText('ما لقينا الجهاز. تأكد من الكود وشغّل التطبيق ثم جرّب مرة ثانية.','Device not found. Check the code, open the app, then try again.');
     if (!d) return;
+    document.querySelector('.manual-code').open = true;
     const { data: playlists, error } = await sb.from('playlists').select('*').eq('device_id', d.id).order('position').order('created_at');
     if (error) { $('#quick-error').textContent = t('plLoadErr'); return; }
     let pl = playlists?.[0];
     $('#quick-sub').innerHTML = `<div class="quick-found"><span class="app-label">${d.app_type === 'universe' ? 'universe' : 'Alaa Player'}</span><b class="mono">${esc(d.device_code)}</b>${badge(status(d))}</div><form id="quick-form"><h2>${quickText('أضف الاشتراك','Add subscription')}</h2><p class="muted sm">${quickText('الحفظ يفعّل الجهاز. القوائم الإضافية تبقى مثل ما هي.','Saving activates the TV. Other playlists remain unchanged.')}</p><div class="seg"><label><input type="radio" name="type" value="xtream" ${!pl || pl.type === 'xtream' ? 'checked' : ''}><span>Xtream</span></label><label><input type="radio" name="type" value="m3u" ${pl?.type === 'm3u' ? 'checked' : ''}><span>M3U</span></label></div><div class="t-xtream"><label>${t('server')}<input name="server" dir="ltr" value="${esc(pl?.server)}" placeholder="https://provider.example:8080"></label><div class="grid2"><label>${t('username')}<input name="username" dir="ltr" value="${esc(pl?.username)}" autocomplete="off"></label><label>${t('password')}<input name="password" type="password" dir="ltr" value="${esc(pl?.password)}" autocomplete="new-password"></label></div></div><div class="t-m3u"><label>${t('url')}<input name="url" dir="ltr" value="${esc(pl?.url)}" placeholder="https://provider.example/list.m3u"></label></div><button class="btn primary wide">${quickText('حفظ الاشتراك وتفعيل الجهاز','Save subscription and activate TV')}</button><p id="quick-result" role="status" aria-live="polite"></p></form>`;
+    polishQuickText();
     const form = $('#quick-form');
     const sync = () => {form.dataset.type = form.elements.type.value;};
     form.querySelectorAll('[name=type]').forEach(r => r.onchange = sync); sync();
@@ -550,7 +567,17 @@ function renderQuick() {
       if(form.dataset.busy) return;
       const values = {...Object.fromEntries(new FormData(form)), name: pl?.name || 'Subscription'};
       const v = validatePlaylist(values,d.id);
-      if(v.error) {form.elements[v.field]?.focus(); $('#quick-result').textContent = t(v.error); return;}
+      form.querySelectorAll('.field-error').forEach(el => el.remove());
+      form.querySelectorAll('[aria-invalid]').forEach(el => {el.removeAttribute('aria-invalid');el.removeAttribute('aria-describedby');});
+      $('#quick-result').textContent = '';
+      if(v.error) {
+        const field = form.elements[v.field];
+        const message = document.createElement('p'); message.className = 'field-error'; message.dir = 'auto'; message.id = 'error-'+v.field; message.setAttribute('role','alert');
+        if(v.error === 'errUrl' && getLang() === 'ar') {
+          message.append('الرابط لازم يبدأ بـ ', Object.assign(document.createElement('bdi'),{dir:'ltr',textContent:'http'}), ' أو ', Object.assign(document.createElement('bdi'),{dir:'ltr',textContent:'https'}));
+        } else message.textContent = t(v.error);
+        field.insertAdjacentElement('afterend',message);field.setAttribute('aria-invalid','true');field.setAttribute('aria-describedby',message.id);field.focus();return;
+      }
       form.dataset.busy = '1'; const btn = form.querySelector('button'); btn.disabled = true;
       const {data: saved, error} = await sb.rpc('admin_save_subscription', {p_device_id:d.id, p_playlist_id:pl?.id || null, p_playlist:v.row});
       delete form.dataset.busy; btn.disabled = false;
@@ -558,7 +585,8 @@ function renderQuick() {
       if(!error) { pl = {...v.row, id:saved.playlist_id}; await loadDevices(); form.querySelector('[name=password]').value = ''; form.querySelector('[name=url]').value = ''; }
     };
   };
-  app.querySelectorAll('[data-quick]').forEach(b => b.onclick = () => {lookup.elements.code.value = b.dataset.quick; lookup.requestSubmit();});
+  app.querySelectorAll('[data-quick]').forEach(b => b.onclick = () => {document.querySelector('.manual-code').open=true;lookup.elements.code.value = b.dataset.quick;lookup.requestSubmit();});
+  quickRefreshTimer = setTimeout(() => {if(location.hash === '#/' || location.hash === '') {if(!$('#quick-form')) route();}},30000);
 }
 
 /* ---------- router ---------- */
