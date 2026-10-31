@@ -148,26 +148,24 @@ Resources:`;for(let t of c){if(!t||typeof t!=`string`)throw Error(`@supabase/aut
         <div class="device-identity"><span class="code xl" dir="ltr">${Y(t.device_code)}</span><span class="app-label">${t.app_type===`universe`?`universe`:`Alaa Player`}</span></div>
         <div class="hero-meta">${Ia(s)}<span class="muted sm">◉ ${o(`lastSeen`)}: ${Fa(t.last_seen)}</span></div>
       </div>
-      ${c===null?``:`<div class="ring ${c<0?`neg`:c<7?`warn`:``}"><svg viewBox="0 0 120 120"><circle cx="60" cy="60" r="52" class="trk"/><circle cx="60" cy="60" r="52" class="val" pathLength="100" style="stroke-dashoffset:${c<0?0:100-Math.min(100,Math.round(c/365*100))}"/></svg><b data-count="${Math.abs(c)}">0</b><small>${o(`days`)}${c>=0?` `+o(`daysLeft`):``}</small></div>`}
+      ${t.expires_at?`<div class="hero-exp muted sm">${o(`expiry`)}: <b dir="ltr">${l}</b>${c===null?``:` · ${Math.abs(c)} ${o(`days`)}`}</div>`:``}
     </section>
-    <form id="df" class="card rise" style="--d:80ms">
+    <nav class="dtiles rise" style="--d:80ms">
+      <button type="button" class="dtile" data-sec="sub" aria-expanded="false" aria-controls="sf"><i>◷</i><span>${$(`الاشتراك`,`Subscription`)}</span></button>
+      <button type="button" class="dtile" data-sec="pl" aria-expanded="false" aria-controls="playlists"><i>≣</i><span>${$(`القوائم`,`Playlists`)}</span></button>
+      <button type="button" class="dtile" id="hide-categories"><i>◩</i><span>${$(`إخفاء الفئات`,`Hide categories`)}</span></button>
+      <button type="button" class="dtile" data-sec="info" aria-expanded="false" aria-controls="df"><i>ⓘ</i><span>${$(`معلومات الجهاز`,`Device info`)}</span></button>
+    </nav>
+    <form id="sf" class="card rise dsec" data-panel="sub" aria-label="sub" hidden style="--d:0ms">
       <label class="switch"><input type="checkbox" name="active" ${t.active?`checked`:``}><span></span>${o(`activeToggle`)}</label>
-      <div class="grid2">
-        <label>${o(`customer`)}<input name="customer" value="${Y(t.customer)}"></label>
-        <label>${o(`mac`)}<input name="mac" value="${Y(t.mac)}" dir="ltr" class="mono"></label>
-      </div>
       <label>${o(`expiry`)}
         <div class="device-expiry"><input name="expires_at" type="date" value="${l}" id="exp">
         <div class="ext">${[[`m1`,1],[`m3`,3],[`y1`,12]].map(([e,t])=>`<button type="button" class="chip" data-m="${t}">${o(e)}</button>`).join(``)}</div></div>
       </label>
-      <label>${o(`note`)}<textarea name="note" rows="2">${Y(t.note)}</textarea></label>
-      ${t.model?`<p class="muted sm">${o(`model`)}: ${Y(t.model)}</p>`:``}
-      <div class="device-actions"><button type="button" class="btn danger ghost" id="del">${o(`delete`)}</button><button class="btn primary">${o(`save`)}</button></div>
+      <div class="device-actions one"><button class="btn primary">${o(`save`)}</button></div>
     </form>
-    <section class="card rise device-categories" style="--d:140ms"><button type="button" class="btn ghost wide" id="hide-categories">${$(`إخفاء الفئات`,`Hide categories`)}</button></section>
-    <section class="rise device-playlists" style="--d:160ms" id="playlists">
+    <section class="rise device-playlists dsec" data-panel="pl" hidden style="--d:0ms" id="playlists">
       <div class="row between head"><h2>${o(`playlists`)}</h2><button class="btn primary sm" id="addpl2">＋ ${o(`addPlaylist`)}</button></div>
-      <p class="muted sm" dir="auto">${o(`plHelp`)}</p>
       ${i?`<div class="empty empty-pl"><p class="muted">${o(`plLoadErr`)}: ${Y(i.message)}</p><button class="btn ghost sm" id="plretry">${o(`retry`)}</button></div>`:``}
       ${i?``:(r||[]).length?r.map(e=>`
         <div class="pl" data-id="${e.id}">
@@ -176,7 +174,17 @@ Resources:`;for(let t of c){if(!t||typeof t!=`string`)throw Error(`@supabase/aut
           <button class="icon" data-edit="${e.id}" aria-label="edit">✎</button>
         </div>`).join(``):`<div class="empty empty-pl">${qa}<p class="muted">${o(`noPlaylists`)}</p></div>`}
     </section>
-  `),Ga(),X(`#exp`).closest(`label`).querySelectorAll(`[data-m]`).forEach(e=>e.onclick=()=>{let t=X(`#exp`).value&&new Date(X(`#exp`).value)>new Date?new Date(X(`#exp`).value):new Date;t.setMonth(t.getMonth()+ +e.dataset.m),X(`#exp`).value=t.toISOString().slice(0,10),X(`[name=active]`).checked=!0}),X(`#df`).onsubmit=async t=>{t.preventDefault();let n=new FormData(t.target),{error:r}=await q.from(`devices`).update({active:!!n.get(`active`),customer:n.get(`customer`)||null,mac:n.get(`mac`)||null,note:n.get(`note`)||null,expires_at:n.get(`expires_at`)?new Date(n.get(`expires_at`)+`T23:59:59`).toISOString():null}).eq(`id`,e);if(r)return Q(r.message,!0);Q(o(`saved`)),ro(e)},X(`#del`).onclick=e=>no(t,e.currentTarget),X(`#hide-categories`).onclick=()=>d({sb:q,device:t,playlists:r||[]});let u=()=>i?Q(o(`plLoadErr`),!0):io(e,null,(r||[]).length);X(`#addpl2`).onclick=u,i&&(X(`#plretry`).onclick=()=>ro(e)),J.querySelectorAll(`[data-edit]`).forEach(t=>t.onclick=()=>io(e,r.find(e=>e.id===t.dataset.edit)))}function io(e,t,n=0){let r=t?.type||`m3u`;eo(`
+    <form id="df" class="card rise dsec" data-panel="info" hidden style="--d:0ms">
+      <div class="grid2">
+        <label>${o(`customer`)}<input name="customer" value="${Y(t.customer)}"></label>
+        <label>${o(`mac`)}<input name="mac" value="${Y(t.mac)}" dir="ltr" class="mono"></label>
+      </div>
+      <label>${o(`note`)}<textarea name="note" rows="2">${Y(t.note)}</textarea></label>
+      ${t.model?`<p class="muted sm">${o(`model`)}: ${Y(t.model)}</p>`:``}
+      <div class="device-actions one"><button class="btn primary">${o(`save`)}</button></div>
+      <button type="button" class="btn danger wide" id="del">${o(`delete`)}</button>
+    </form>
+  `),Ga();let u=()=>{J.querySelectorAll(`.dtile[data-sec]`).forEach(e=>e.setAttribute(`aria-expanded`,`false`)),J.querySelectorAll(`[data-panel]`).forEach(e=>e.hidden=!0)};J.querySelectorAll(`.dtile[data-sec]`).forEach(e=>e.onclick=()=>{let t=e.getAttribute(`aria-expanded`)!==`true`;if(J.querySelectorAll(`.dtile[data-sec]`).forEach(e=>e.setAttribute(`aria-expanded`,`false`)),J.querySelectorAll(`[data-panel]`).forEach(e=>e.hidden=!0),t){e.setAttribute(`aria-expanded`,`true`);let t=J.querySelector(`[data-panel="${e.dataset.sec}"]`);t.hidden=!1,t.scrollIntoView?.({block:`nearest`})}}),X(`#exp`).closest(`label`).querySelectorAll(`[data-m]`).forEach(e=>e.onclick=()=>{let t=X(`#exp`).value&&new Date(X(`#exp`).value)>new Date?new Date(X(`#exp`).value):new Date;t.setMonth(t.getMonth()+ +e.dataset.m),X(`#exp`).value=t.toISOString().slice(0,10),X(`[name=active]`).checked=!0});let f=(t,n)=>X(t).onsubmit=async t=>{t.preventDefault();let r=new FormData(t.target),{error:i}=await q.from(`devices`).update(n(r)).eq(`id`,e);if(i)return Q(i.message,!0);Q(o(`saved`)),ro(e)};f(`#sf`,e=>({active:!!e.get(`active`),expires_at:e.get(`expires_at`)?new Date(e.get(`expires_at`)+`T23:59:59`).toISOString():null})),f(`#df`,e=>({customer:e.get(`customer`)||null,mac:e.get(`mac`)||null,note:e.get(`note`)||null})),X(`#del`).onclick=e=>no(t,e.currentTarget),X(`#hide-categories`).onclick=()=>{u(),d({sb:q,device:t,playlists:r||[]})};let p=()=>i?Q(o(`plLoadErr`),!0):io(e,null,(r||[]).length);X(`#addpl2`).onclick=p,i&&(X(`#plretry`).onclick=()=>ro(e)),J.querySelectorAll(`[data-edit]`).forEach(t=>t.onclick=()=>io(e,r.find(e=>e.id===t.dataset.edit)))}function io(e,t,n=0){let r=t?.type||`m3u`;eo(`
     <h2>${t?Y(t.name):o(`addPlaylist`)}</h2>
     <form id="pf" novalidate>
       <div class="seg"><label><input type="radio" name="type" value="m3u" ${r===`m3u`?`checked`:``}><span>M3U</span></label><label><input type="radio" name="type" value="xtream" ${r===`xtream`?`checked`:``}><span>Xtream</span></label></div>
