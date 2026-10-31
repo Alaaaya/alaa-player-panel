@@ -143,10 +143,10 @@ Resources:`;for(let t of c){if(!t||typeof t!=`string`)throw Error(`@supabase/aut
       <div class="row end"><button type="button" class="btn ghost" data-close>${o(`cancel`)}</button><button class="btn primary">${o(`save`)}</button></div>
     </form>`,(e,t)=>{X(`#af`,e).onsubmit=async e=>{e.preventDefault();let n=new FormData(e.target),r=n.get(`device_code`).trim().toUpperCase();if(!r)return Q(o(`required`),!0);let i={device_code:r,mac:n.get(`mac`)||null,customer:n.get(`customer`)||null,active:!!n.get(`active`),expires_at:n.get(`expires_at`)?new Date(n.get(`expires_at`)+`T23:59:59`).toISOString():null},{data:a,error:s}=await q.from(`devices`).insert(i).select().single();if(s)return Q(s.code===`23505`?o(`exists`):s.message,!0);t(),Q(o(`created`)),location.hash=`#/d/`+a.id}})}async function no(e,t){let n=$(`حذف الجهاز ${e.device_code}؟ رح ينحذف الجهاز وبيانات اشتراكه نهائياً. أي اشتراك مرتبط بجهاز تاني بيبقى محفوظ. إعادة الربط بتحتاج تسجيل الجهاز من جديد.`,`Delete device ${e.device_code}? The device and its subscription details will be permanently deleted. Subscriptions linked to another device will be kept. Reconnecting requires registering the TV again.`);if(confirm(n)){t&&(t.disabled=!0);try{let{data:t,error:n}=await q.rpc(`admin_delete_device`,{p_device_id:e.id});if(n||t?.status!==`deleted`)return Q(o(`delFailed`),!0);Q(o(`deleted`)),location.hash.startsWith(`#/d/`)?location.hash=`#/`:await _o()}catch{Q(o(`delFailed`),!0)}finally{t&&(t.disabled=!1)}}}async function ro(e){let[{data:t,error:n},{data:r,error:i}]=await Promise.all([q.from(`devices`).select(`*`).eq(`id`,e).single(),q.from(`playlists`).select(`*`).eq(`device_id`,e).order(`position`).order(`created_at`)]);if(n||!t){location.hash=`#/`;return}let s=Na(t),c=t.expires_at?Math.ceil((new Date(t.expires_at)-Date.now())/Ma):null,l=t.expires_at?new Date(t.expires_at).toISOString().slice(0,10):``;J.innerHTML=Ba(`
     <a href="#/" class="back">${a()===`ar`?`→`:`←`} ${o(`back`)}</a>
-    <section class="hero rise">
-      <div>
-        <span class="code xl" dir="ltr">${Y(t.device_code)}</span><span class="app-label">${t.app_type===`universe`?`universe`:`Alaa Player`}</span>
-        <div class="hero-meta">${Ia(s)}<a class="btn primary sm" href="#playlists" id="addpl-top">＋ ${o(`addPlaylist`)}</a><span class="muted sm">◉ ${o(`lastSeen`)}: ${Fa(t.last_seen)}</span></div>
+    <section class="hero rise device-hero card">
+      <div class="device-heading">
+        <div class="device-identity"><span class="code xl" dir="ltr">${Y(t.device_code)}</span><span class="app-label">${t.app_type===`universe`?`universe`:`Alaa Player`}</span></div>
+        <div class="hero-meta">${Ia(s)}<span class="muted sm">◉ ${o(`lastSeen`)}: ${Fa(t.last_seen)}</span></div>
       </div>
       ${c===null?``:`<div class="ring ${c<0?`neg`:c<7?`warn`:``}"><svg viewBox="0 0 120 120"><circle cx="60" cy="60" r="52" class="trk"/><circle cx="60" cy="60" r="52" class="val" pathLength="100" style="stroke-dashoffset:${c<0?0:100-Math.min(100,Math.round(c/365*100))}"/></svg><b data-count="${Math.abs(c)}">0</b><small>${o(`days`)}${c>=0?` `+o(`daysLeft`):``}</small></div>`}
     </section>
@@ -157,18 +157,17 @@ Resources:`;for(let t of c){if(!t||typeof t!=`string`)throw Error(`@supabase/aut
         <label>${o(`mac`)}<input name="mac" value="${Y(t.mac)}" dir="ltr" class="mono"></label>
       </div>
       <label>${o(`expiry`)}
-        <div class="row"><input name="expires_at" type="date" value="${l}" id="exp">
+        <div class="device-expiry"><input name="expires_at" type="date" value="${l}" id="exp">
         <div class="ext">${[[`m1`,1],[`m3`,3],[`y1`,12]].map(([e,t])=>`<button type="button" class="chip" data-m="${t}">${o(e)}</button>`).join(``)}</div></div>
       </label>
       <label>${o(`note`)}<textarea name="note" rows="2">${Y(t.note)}</textarea></label>
       ${t.model?`<p class="muted sm">${o(`model`)}: ${Y(t.model)}</p>`:``}
-      <div class="row between"><button type="button" class="btn danger ghost" id="del">${o(`delete`)}</button><button class="btn primary">${o(`save`)}</button></div>
-      <button type="button" class="btn ghost wide" id="addpl-form">＋ ${o(`addPlaylist`)} (M3U / Xtream)</button>
+      <div class="device-actions"><button type="button" class="btn danger ghost" id="del">${o(`delete`)}</button><button class="btn primary">${o(`save`)}</button></div>
     </form>
-    <section class="rise" style="--d:140ms"><button type="button" class="btn ghost wide" id="hide-categories">${$(`إخفاء الفئات`,`Hide categories`)}</button></section>
-    <section class="rise" style="--d:160ms" id="playlists">
+    <section class="card rise device-categories" style="--d:140ms"><button type="button" class="btn ghost wide" id="hide-categories">${$(`إخفاء الفئات`,`Hide categories`)}</button></section>
+    <section class="rise device-playlists" style="--d:160ms" id="playlists">
       <div class="row between head"><h2>${o(`playlists`)}</h2><button class="btn primary sm" id="addpl2">＋ ${o(`addPlaylist`)}</button></div>
-      <p class="muted sm">${o(`plHelp`)}</p>
+      <p class="muted sm" dir="auto">${o(`plHelp`)}</p>
       ${i?`<div class="empty empty-pl"><p class="muted">${o(`plLoadErr`)}: ${Y(i.message)}</p><button class="btn ghost sm" id="plretry">${o(`retry`)}</button></div>`:``}
       ${i?``:(r||[]).length?r.map(e=>`
         <div class="pl" data-id="${e.id}">
@@ -177,7 +176,7 @@ Resources:`;for(let t of c){if(!t||typeof t!=`string`)throw Error(`@supabase/aut
           <button class="icon" data-edit="${e.id}" aria-label="edit">✎</button>
         </div>`).join(``):`<div class="empty empty-pl">${qa}<p class="muted">${o(`noPlaylists`)}</p></div>`}
     </section>
-  `),Ga(),X(`#exp`).closest(`label`).querySelectorAll(`[data-m]`).forEach(e=>e.onclick=()=>{let t=X(`#exp`).value&&new Date(X(`#exp`).value)>new Date?new Date(X(`#exp`).value):new Date;t.setMonth(t.getMonth()+ +e.dataset.m),X(`#exp`).value=t.toISOString().slice(0,10),X(`[name=active]`).checked=!0}),X(`#df`).onsubmit=async t=>{t.preventDefault();let n=new FormData(t.target),{error:r}=await q.from(`devices`).update({active:!!n.get(`active`),customer:n.get(`customer`)||null,mac:n.get(`mac`)||null,note:n.get(`note`)||null,expires_at:n.get(`expires_at`)?new Date(n.get(`expires_at`)+`T23:59:59`).toISOString():null}).eq(`id`,e);if(r)return Q(r.message,!0);Q(o(`saved`)),ro(e)},X(`#del`).onclick=e=>no(t,e.currentTarget),X(`#hide-categories`).onclick=()=>d({sb:q,device:t,playlists:r||[]});let u=()=>i?Q(o(`plLoadErr`),!0):io(e,null,(r||[]).length);X(`#addpl2`).onclick=u,X(`#addpl-form`).onclick=u,X(`#addpl-top`).onclick=e=>{e.preventDefault(),X(`#playlists`).scrollIntoView({behavior:`smooth`}),u()},i&&(X(`#plretry`).onclick=()=>ro(e)),J.querySelectorAll(`[data-edit]`).forEach(t=>t.onclick=()=>io(e,r.find(e=>e.id===t.dataset.edit)))}function io(e,t,n=0){let r=t?.type||`m3u`;eo(`
+  `),Ga(),X(`#exp`).closest(`label`).querySelectorAll(`[data-m]`).forEach(e=>e.onclick=()=>{let t=X(`#exp`).value&&new Date(X(`#exp`).value)>new Date?new Date(X(`#exp`).value):new Date;t.setMonth(t.getMonth()+ +e.dataset.m),X(`#exp`).value=t.toISOString().slice(0,10),X(`[name=active]`).checked=!0}),X(`#df`).onsubmit=async t=>{t.preventDefault();let n=new FormData(t.target),{error:r}=await q.from(`devices`).update({active:!!n.get(`active`),customer:n.get(`customer`)||null,mac:n.get(`mac`)||null,note:n.get(`note`)||null,expires_at:n.get(`expires_at`)?new Date(n.get(`expires_at`)+`T23:59:59`).toISOString():null}).eq(`id`,e);if(r)return Q(r.message,!0);Q(o(`saved`)),ro(e)},X(`#del`).onclick=e=>no(t,e.currentTarget),X(`#hide-categories`).onclick=()=>d({sb:q,device:t,playlists:r||[]});let u=()=>i?Q(o(`plLoadErr`),!0):io(e,null,(r||[]).length);X(`#addpl2`).onclick=u,i&&(X(`#plretry`).onclick=()=>ro(e)),J.querySelectorAll(`[data-edit]`).forEach(t=>t.onclick=()=>io(e,r.find(e=>e.id===t.dataset.edit)))}function io(e,t,n=0){let r=t?.type||`m3u`;eo(`
     <h2>${t?Y(t.name):o(`addPlaylist`)}</h2>
     <form id="pf" novalidate>
       <div class="seg"><label><input type="radio" name="type" value="m3u" ${r===`m3u`?`checked`:``}><span>M3U</span></label><label><input type="radio" name="type" value="xtream" ${r===`xtream`?`checked`:``}><span>Xtream</span></label></div>
