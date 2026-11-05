@@ -1,4 +1,4 @@
-import {publicPage,requestQueue} from './requests.js';
+import {createPublicPage,requestQueue} from './requests.js';
 import {openCategories} from './categories.js';
 import { createClient } from '@supabase/supabase-js';
 import { t, getLang, setLang } from './i18n.js';
@@ -650,6 +650,7 @@ function renderQuick() {
   quickRefreshTimer = setTimeout(() => {if(location.hash === '#/' || location.hash === '') {if(!$('#quick-form')) route();}},30000);
 }
 
+const publicPage = createPublicPage();
 /* ---------- router ---------- */
 async function route() {
   if (!/\/admin(?:\/|$)/.test(location.pathname)) return publicPage({app,sb,esc,lang:getLang(),theme:document.documentElement.dataset.theme,setTheme,themes:THEMES});
