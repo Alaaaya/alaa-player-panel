@@ -1,0 +1,15 @@
+/* Independent photo background override. Never touches theme definitions. */
+#bgphoto{position:fixed;inset:0;z-index:-1;pointer-events:none;background-size:cover;background-position:center;background-repeat:no-repeat}
+html[data-bgo] .bg-a,html[data-bgo] .bg-b,html[data-bgo] .bg-c,html[data-bgo] .bg .mosaic{display:none!important}
+html[data-bgo=none] .bg{background:var(--ink)}
+.bgs{display:grid;grid-template-columns:repeat(auto-fill,minmax(96px,1fr));gap:10px}
+.bgpick{display:flex;flex-direction:column;gap:6px;padding:6px;border-radius:14px;border:1px solid var(--line);color:var(--muted);font-size:12px;background:transparent;font-family:inherit;text-align:start}
+.bgpick img,.bgnone{width:100%;aspect-ratio:3/2;border-radius:9px;object-fit:cover;display:grid;place-items:center;background:var(--ink2);font-size:22px}
+.bgpick em{font-style:normal}
+.bgpick.on{border-color:var(--a1);color:var(--cream);box-shadow:0 0 0 3px var(--glow)}
+/* readability scrim: keeps text legible on bright photo areas (all photos, all themes) */
+#bgphoto::after{content:"";position:absolute;inset:0;background:linear-gradient(rgba(6,8,14,.58),rgba(6,8,14,.68))}
+html[data-bgo] h1,html[data-bgo] h2,html[data-bgo] h3,html[data-bgo] .card,html[data-bgo] main{text-shadow:0 1px 3px rgba(0,0,0,.55)}
+html[data-bgo]:not([data-bgo=none]){--muted:color-mix(in srgb,var(--cream) 82%,transparent)}
+html[data-bgo]:not([data-bgo=none]) body{font-weight:500}
+html[data-bgo]:not([data-bgo=none]) .muted,html[data-bgo]:not([data-bgo=none]) .mark small{color:var(--muted);opacity:1}
