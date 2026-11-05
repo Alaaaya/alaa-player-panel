@@ -1,0 +1,56 @@
+/* LTR layout is intentional, including Arabic. Existing theme palettes are retained. */
+.quick-head{display:flex;justify-content:space-between;align-items:center;gap:20px;margin:54px 0 32px}.quick-head h1{font-size:clamp(26px,4vw,38px);line-height:1.5}.quick-head .eyebrow{font:11px var(--mono);letter-spacing:.14em;color:var(--saffron)}.quick-steps{display:flex;gap:28px;margin-bottom:20px;color:var(--muted);font-size:13px}.quick-steps .on{color:var(--saffron)}.quick-card{padding:28px}.quick-card #quick-code{font-size:21px;letter-spacing:.12em}.quick-bottom{display:flex;justify-content:space-between;gap:16px;color:var(--muted);font-size:13px}.quick-found{display:flex;align-items:center;gap:14px;border-top:1px solid var(--line);padding:24px 0;margin-top:20px}.app-label{display:inline-block;white-space:nowrap;padding:3px 9px;border-radius:6px;background:var(--ink3);border:1px solid var(--line);color:var(--saffron2);font:11px var(--mono);letter-spacing:0}.quick-recent{margin-top:42px}.quick-recent h2{font-size:17px;margin-bottom:15px}.quick-device{display:flex;align-items:center;gap:14px;width:100%;padding:16px 0;border-bottom:1px solid var(--line);text-align:left}.quick-device .badge{margin-left:auto}#quick-result{color:var(--mint)}button:focus-visible,a:focus-visible{outline:2px solid var(--saffron);outline-offset:4px}.quick-card label{font-size:14px}.quick-head>.btn{flex-shrink:0}@media(max-width:560px){.quick-head{margin-top:28px;align-items:flex-start;flex-direction:column}.quick-card{padding:20px}.quick-steps{gap:14px;font-size:12px}.quick-device{flex-wrap:wrap}.quick-device>.muted{display:none}.quick-bottom{flex-wrap:wrap}.quick-card #lookup .row{align-items:stretch}.quick-card #lookup button{width:100%}}
+/* Arabic prose isolates its punctuation without mirroring any layout. */
+html[lang=ar] .quick-head p,html[lang=ar] .quick-head h1,html[lang=ar] .quick-card p,html[lang=ar] .quick-card h2,html[lang=ar] .quick-card label{unicode-bidi:plaintext;text-align:start}
+.quick-card label{color:var(--cream)}
+
+.quick-card .muted,.quick-head .muted,.quick-bottom,.quick-device>.muted{color:var(--cream);opacity:.82}.field-error{margin:2px 0 8px;color:var(--coral);font-size:13px;opacity:1}.quick-card [aria-invalid=true]{border-color:var(--coral)}.quick-card label>bdi{align-self:flex-start}#quick-result{color:var(--cream)}
+
+.pending-list{margin-bottom:30px}.pending-device{display:flex;justify-content:space-between;align-items:center;gap:20px;padding:22px;background:var(--ink2);border:1px solid var(--line);border-radius:16px;margin-top:12px}.pending-device h3{font-size:22px;margin:12px 0 0}.pending-device p{margin:4px 0 0}.activate-pending{min-width:125px;font-size:18px;min-height:54px}.manual-code{margin:25px 0}.manual-code summary{cursor:pointer;color:var(--muted);padding:15px 0}.pending-list .muted{color:var(--cream);opacity:.8}@media(max-width:560px){.pending-device{padding:16px;gap:10px}.pending-device h3{font-size:17px}.activate-pending{min-width:90px}}
+
+/* Keep controls in flow. A sticky header must not paint over scrolled text. */
+html .top{background:var(--ink)!important}
+main{scroll-padding-top:110px;padding-bottom:calc(120px + env(safe-area-inset-bottom,0px))}
+.pending-list{padding-top:16px;scroll-margin-top:110px}
+.pending-list>h2{margin-bottom:8px}
+.pending-actions{display:flex;flex-direction:column;align-items:stretch;gap:8px;flex-shrink:0}
+.pending-actions .delete-device{min-height:44px}
+.quick-found{flex-wrap:wrap}
+.quick-found .delete-device{margin-left:auto;min-height:44px}
+.manual-code summary{padding:20px 0;min-height:60px}
+.manual-code[open] .quick-steps{position:static;flex-wrap:wrap;gap:12px 20px;margin:24px 0 28px;padding:16px 0;line-height:1.8}
+@media(max-width:560px){
+  /* Header remains in document flow on small screens, so headings cannot slide beneath it. */
+  html .top{position:relative}
+  html main{padding-bottom:calc(156px + env(safe-area-inset-bottom,0px));padding-top:18px}
+  .pending-list{padding-top:24px}
+  .manual-code{margin-top:32px;margin-bottom:36px}
+  .pending-device>div:first-child{min-width:0;overflow-wrap:anywhere}
+  .pending-actions{min-width:90px}
+}
+
+/* Each recent device owns both its summary and secondary action. */
+.quick-device-card{display:flex;flex-direction:column;align-items:flex-start;gap:12px;padding:16px;margin:12px 0;border:1px solid var(--line);border-radius:16px;background:var(--ink2);min-width:0}
+.quick-device-card .quick-device{padding:0;border:0;min-height:44px;flex-wrap:wrap;gap:8px 12px;min-width:0}
+.quick-device-card .category-open-device{display:inline-flex;position:static;align-items:center;justify-content:center;min-height:44px;margin:0;max-width:100%;white-space:normal}
+.quick-device-card .mono{overflow-wrap:anywhere}.quick-device-card .badge{flex-shrink:0}
+html .top{padding-top:calc(14px + env(safe-area-inset-top,0px))}
+@media(max-width:560px){.quick-head{padding-top:env(safe-area-inset-top,0px);scroll-margin-top:calc(24px + env(safe-area-inset-top,0px))}.quick-device-card{padding:14px}.quick-device-card .quick-device .badge{margin-left:auto}}
+
+/* Device details retain their theme, with a shared 16/24px rhythm. */
+.device-hero{padding:24px;margin-bottom:24px;align-items:flex-start}.device-heading{min-width:0;flex:1}.device-identity{display:flex;align-items:center;flex-wrap:wrap;gap:12px 16px}.device-identity .code{overflow-wrap:anywhere;line-height:1.5}.device-hero .hero-meta{margin-top:16px;gap:12px 16px}.device-hero .hero-meta .muted{min-width:0;overflow-wrap:anywhere}
+#df{padding:24px;margin-bottom:24px}#df label{margin-bottom:24px}#df .switch{margin-bottom:24px}#df .grid2{gap:16px}#df input,#df textarea{min-width:0;width:100%;box-sizing:border-box}#df .device-expiry{display:flex;flex-direction:column;gap:16px}#df .ext{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px}#df .ext .chip{width:100%;min-height:48px;padding:8px;white-space:normal}#df .device-actions{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:24px}#df .device-actions .btn{min-height:48px;width:100%;margin:0}
+.device-categories{padding:24px;margin-bottom:24px}.device-categories .btn,.device-playlists .btn{min-height:48px}.device-playlists{margin-bottom:24px}.device-playlists .head{gap:16px;align-items:center;flex-wrap:wrap;margin-bottom:16px}.device-playlists>p{margin-bottom:24px}.device-playlists .pl{margin-bottom:16px;padding:16px}
+@media(max-width:560px){.device-hero{padding:16px;flex-wrap:wrap}.device-hero .device-heading{flex-basis:100%}.device-hero .ring{width:72px;height:72px}.device-identity .code{font-size:22px}.device-identity{gap:8px 16px}#df,.device-categories{padding:16px}#df .grid2{grid-template-columns:1fr;gap:0}html main:has(#df){padding-bottom:calc(160px + env(safe-area-inset-bottom,0px))}.device-playlists .pl{padding:16px}}
+
+/* Device detail: compact header, four tiles, one open section. LTR in every language. */
+.hero-exp{margin-top:12px}.device-hero{padding:16px}
+.dtiles{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:24px}
+.dtile{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;min-height:128px;padding:16px;border-radius:16px;background:var(--ink2);border:1px solid var(--line);color:var(--cream);font-size:16px;font-weight:600;text-align:center;cursor:pointer}
+.dtile i{font-style:normal;font-size:40px;line-height:1;color:var(--saffron)}
+.dtile[aria-expanded=true]{border-color:var(--saffron);background:var(--ink3)}
+.dsec[hidden]{display:none!important}
+#sf{padding:24px;margin-bottom:24px}#sf label{margin-bottom:24px}#sf input{min-width:0;width:100%;box-sizing:border-box}#sf .device-expiry{display:flex;flex-direction:column;gap:16px}#sf .ext{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px}#sf .ext .chip{width:100%;min-height:48px}
+.device-actions.one{display:grid;grid-template-columns:1fr;gap:16px;margin-top:24px}.device-actions.one .btn{min-height:48px;width:100%}
+#df #del{min-height:48px;margin-top:24px;background:#c0392b;color:#fff;border:0}
+@media(max-width:560px){#sf{padding:16px}}

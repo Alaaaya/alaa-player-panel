@@ -1,0 +1,15 @@
+# Admission isolation
+
+Public ES256 signing keys are fetched only from the fixed project's Auth JWKS URL. Signature, issuer and expiry checks are admission gates, not identity or authorization. Every admitted call still performs Auth.getUser and is_admin; only their validated UUID may debit existing atomic PostgreSQL quotas. Forwarded IP and decoded sub are unused.
+
+Per isolate limits are 64 signature operations, eight unknown ES256 Auth checks, two legacy HS256 Auth checks, four previously server-verified admin Auth checks, and eight verified-admin provider operations. Invalid callers cannot acquire provider slots or admin local/DB quota. A SHA256-only cache, at most 256 entries with 60-second TTL, provides the reserved revalidation lane, not authorization. No raw token is persisted or logged. UUID budgets cap at 1000. Shared PostgreSQL 60 global/20 per-user per minute and eight expiring leases remain unchanged and fail closed.
+
+JWKS refresh is single-flight, at most once/minute, with 32KB/16-key caps, a three-second deadline and five-minute freshness. Known keys get only one additional minute on refresh failure; errors never extend grace. Subsequent requests fail closed, including warm admins. Unknown-kid rotation may have a one-minute delay.
+
+Availability is not absolute. Legacy HS256 has no public verification key: arbitrary HS256-shaped tokens can occupy its separate two-slot lane and deny cold legacy sessions; this does not occupy ES256 admission. Legacy session lifetime has NOT been established or assumed. Correctly signed but revoked/nonadmin tokens may occupy the eight unknown ES256 slots and deny cold/new-token ES256 admins. Previously validated exact tokens use the reserved lane and still revalidate. Isolate turnover clears cache. Distributed volumetric attacks, Auth/JWKS/platform resource exhaustion, and 64 concurrent crypto-operation saturation remain possible. Local pools are not a global verifier rate limit. Shared DB provider quotas remain distributed and atomic. No universal DoS immunity is claimed.
+
+No frontend/API, schema, grants, owner device or playlist changes. Exact native test evidence, private pre-live backup, downloaded artifact checks and disposable live tests reside outside this repository under /home/kit/tmp/panel/quota-isolation.
+
+## Stored HTTP providers
+
+The owner explicitly accepted plaintext HTTP provider transport for existing stored URLs. HTTP is never silently upgraded. Credentials and category JSON are unencrypted and can be read or altered by an on-path party; response shape/size validation is not authenticity. Allowed destination ports are HTTP 80/8080 and HTTPS 443/8443 only. Both protocols resolve all A/AAAA records and reject any nonpublic result, connect to one pinned literal and verify the connected peer, reject every redirect, and retain identical parser/header/body/deadline limits. HTTPS still verifies TLS against the original hostname. The optional proof callback has no production consumer and grants no authorization.
