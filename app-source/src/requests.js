@@ -1,26 +1,38 @@
 import { t } from './i18n.js';
 import {validatePlaylist} from './playlist.js';
-export function publicPage({app,sb,esc,lang,theme,setTheme,themes}) {
+export function createPublicPage() {
+ const draft={};let busy=false;
+ const FIELDS=['code','name','type','server','username','password','url'];
+ return function publicPage({app,sb,esc,lang,theme,setTheme,themes}) {
+ const old=app.querySelector('#public-request');
+ if(old)FIELDS.forEach(k=>{if(old.elements[k])draft[k]=old.elements[k].value;});
  const ar=lang==='ar', text=(a,b)=>ar?a:b;
  app.innerHTML=`<section class="login"><div class="orb"></div><label class="login-theme"><span>${text('المظهر','Theme')}</span><select data-public-theme aria-label="${text('المظهر','Theme')}">${themes.map(x=>`<option value="${x}" ${x===theme?'selected':''}>${t('th_'+x)}</option>`).join('')}</select></label><button class="lang floating" data-lang>${ar?'EN':'ع'}</button><div class="login-card rise"><span class="glyph big">◐</span><h1>Alaa Player</h1><p class="muted">${text('فعّل اشتراكك','Activate subscription')}</p><p class="muted sm" dir="auto">${text('أدخل الكود الظاهر بالتطبيق وبيانات اشتراكك. التفعيل الفوري للأجهزة الجديدة غير المفعّلة فقط، والاشتراكات الموجودة بتتغير من الإدارة فقط.','Enter the code shown in the app and your subscription. Immediate activation works for new, inactive devices only. Existing subscriptions can only be changed by an administrator.')}</p><form id="public-request"><label>${text('كود الجهاز','Device code')}<input name="code" dir="ltr" autocapitalize="off" autocorrect="off" spellcheck="false" autocomplete="off" maxlength="16" placeholder="A1B2 C3D4 E5F6" required></label><label>${text('اسم الاشتراك','Subscription name')}<input name="name" maxlength="120" required></label><label>${text('النوع','Type')}<select name="type"><option value="xtream">Xtream</option><option value="m3u">M3U</option></select></label><div id="xtream-fields"><label>Server<input name="server" dir="ltr" autocapitalize="off" autocorrect="off" spellcheck="false" maxlength="2048" placeholder="https://provider.example"></label><label>${text('اسم المستخدم','Username')}<input name="username" dir="ltr" autocapitalize="off" autocorrect="off" spellcheck="false" maxlength="512" autocomplete="off"></label><label>${text('كلمة المرور','Password')}<input name="password" dir="ltr" autocapitalize="off" autocorrect="off" spellcheck="false" type="password" maxlength="512" autocomplete="new-password"></label></div><div id="m3u-fields" hidden><label>M3U URL<input name="url" dir="ltr" autocapitalize="off" autocorrect="off" spellcheck="false" maxlength="4096" placeholder="https://provider.example/list.m3u"></label></div><button class="btn primary wide">${text('تفعيل الاشتراك','Activate now')}</button><p id="request-result" role="status" aria-live="polite"></p></form></div></section>`;
+ const f0=app.querySelector('form');
+ FIELDS.forEach(k=>{if(draft[k]!==undefined)f0.elements[k].value=draft[k];});
+ const save=e=>{if(FIELDS.includes(e.target.name))draft[e.target.name]=e.target.value;};
+ f0.addEventListener('input',save);f0.addEventListener('change',save);
+ if(busy)f0.querySelector('button').disabled=true;
  app.querySelector('[data-public-theme]').onchange=e=>{setTheme(e.target.value);};
  const f=app.querySelector('form'),out=app.querySelector('#request-result');
  f.elements.type.onchange=()=>{app.querySelector('#xtream-fields').hidden=f.elements.type.value!=='xtream';app.querySelector('#m3u-fields').hidden=f.elements.type.value!=='m3u';};
+ f.elements.type.onchange();
  f.onsubmit=async e=>{
- e.preventDefault(); if(f.dataset.busy)return;
+ e.preventDefault(); if(busy)return;
  const v=Object.fromEntries(new FormData(f)),code=v.code.replace(/[ -]/g,'').toUpperCase();
  if(!/^[A-F0-9]{12}$/.test(code)){f.elements.code.focus();out.setAttribute('role','alert');out.textContent=text('الكود لازم يكون 12 حرف أو رقم مثل الظاهر بالتطبيق.','Enter the 12-character hexadecimal code shown in the app.');return;}
  const checked=validatePlaylist(v,null);
  if(checked.error){f.elements[checked.field]?.focus();out.setAttribute('role','alert');out.textContent=text('تأكد من بيانات الاشتراك والرابط، لازم يبدأ بـ http أو https.','Check subscription fields and use an http or https URL.');return;}
- out.setAttribute('role','status');f.dataset.busy='1';f.querySelector('button').disabled=true;
+ out.setAttribute('role','status');busy=true;f.querySelector('button').disabled=true;
  try {
  const {data,error}=await sb.rpc('submit_subscription_request',{p_code:code,p_playlist:checked.row});
  if(error)throw Error();
  if(data?.status==='rate_limited')out.textContent=text('طلبات كثيرة. جرّب لاحقاً.','Too many requests. Please try later.');
- else if(data?.status==='activated'){f.reset();f.elements.type.onchange();out.textContent=text('تم التفعيل. حدّث التطبيق.','Activated. Refresh the app.');}
+ else if(data?.status==='activated'){FIELDS.forEach(k=>delete draft[k]);const cur=app.querySelector('#public-request');cur.reset();cur.elements.type.onchange();app.querySelector('#request-result').textContent=text('تم التفعيل. حدّث التطبيق.','Activated. Refresh the app.');}
  else out.textContent=text('تعذر التفعيل. تأكد من الكود أو تواصل مع الإدارة.','Could not activate. Check the code or contact the administrator.');
  }catch{out.textContent=text('ما تم التفعيل. جرّب مرة ثانية.','Could not activate. Please try again.');}
- finally{delete f.dataset.busy;f.querySelector('button').disabled=false;}
+ finally{busy=false;const c=app.querySelector('#public-request');if(c)c.querySelector('button').disabled=false;}
+ };
  };
 }
 export async function requestQueue({app,sb,esc,shell,ar}) {
