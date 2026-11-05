@@ -157,3 +157,8 @@ form[data-type=m3u] .t-xtream,form[data-type=xtream] .t-m3u{display:none}
 
 .pwrow{display:flex;gap:8px;align-items:center}.pwrow input{flex:1;min-width:0}
 .hero-meta .btn{margin-inline-start:8px}
+
+/* public page: keep language button tappable above the card on small screens */
+.login:has(#public-request) .lang.floating{z-index:5}
+.login:has(#public-request) .login-theme{z-index:5}
+@media(max-width:700px){.login:has(#public-request){padding-top:84px;align-items:start}}
