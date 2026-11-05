@@ -666,5 +666,5 @@ async function route() {
   renderDashboard();
   if (document.documentElement.dataset.theme === 'thalj' && h === '#/devices') $('.frost-nav a[href="#/devices"]').classList.add('on'), $('.frost-nav a[href="#/"]').classList.remove('on');
 }
-window.addEventListener('hashchange', route);
+window.addEventListener('hashchange', () => {if(!/\/admin(?:\/|$)/.test(location.pathname) && document.getElementById('public-request')) return;route();});
 route();
