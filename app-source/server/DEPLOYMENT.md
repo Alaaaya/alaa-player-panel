@@ -17,6 +17,6 @@ Server local caps are defense in depth, not authoritative quotas. Inbound body10
 
 Health GET /healthz, category POST /api/admin/device-categories. No query strings accepted by runtime route. CORS exact GitHub Pages origin. Missing/invalid origin denied before Auth. DB failure returns503 without provider fetch. Network/protocol provider failures return generic502.
 
-Render build npm ci --omit=dev, start npm run start:gateway. Bind0.0.0.0:$PORT. No background server setup on sandbox. Auto deploy off, branch kat/categories-production explicitly selected. Deploy gateway first, verify, then build panel with VITE_CATEGORY_API_BASE=gateway HTTPS URL after frontend final counter fix. Tag previous Pages main rollback before any push to main. No app changes in scope.
+Render build npm ci --omit=dev, start npm run start:gateway. Bind0.0.0.0:$PORT. No background server setup on sandbox. Auto deploy off, the dedicated categories production branch explicitly selected. Deploy gateway first, verify, then build panel with VITE_CATEGORY_API_BASE=gateway HTTPS URL after frontend final counter fix. Tag previous Pages main rollback before any push to main. No app changes in scope.
 
 SQL rollback requires review of current state, no blind dropping tables. Restore original get_device_config_v2 from timestamped snapshot and restore grants before removing wrapper/base; remove category trigger/column and new objects only after backup of any newly saved owner settings. Use GitHub Pages rollback tag for panel, suspend new gateway if necessary. Preserve original Render service.
