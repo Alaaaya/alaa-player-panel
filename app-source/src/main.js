@@ -490,9 +490,18 @@ function playlistDialog(deviceId, p, pos = 0) {
       const v = validatePlaylist(f, deviceId);
       if (v.error) { const el = form.elements[v.field]; el?.focus(); return toast(t(v.error), true); }
       form.dataset.busy = '1'; const sub = form.querySelector('button.primary'); sub.disabled = true;
-      const { error } = p ? await sb.from('playlists').update(v.row).eq('id', p.id) : await sb.from('playlists').insert({ ...v.row, position: pos });
-      delete form.dataset.busy; sub.disabled = false;
-      if (error) return toast(error.message, true);
+      let saved;
+      try {
+        const { data, error } = await sb.rpc('admin_save_subscription', {
+          p_device_id: deviceId, p_playlist_id: p?.id || null, p_playlist: v.row,
+        });
+        saved = !error && data?.status === 'saved' && !!data.playlist_id;
+      } catch {
+        saved = false;
+      } finally {
+        delete form.dataset.busy; sub.disabled = false;
+      }
+      if (!saved) return toast(quickText('ما تم الحفظ. جرّب مرة ثانية.', 'Not saved. Please try again.'), true);
       close(); toast(t('saved')); renderDevice(deviceId);
     };
     $('#pwtog', w).onclick = (e) => { const i = form.elements.password; const show = i.type === 'password'; i.type = show ? 'text' : 'password'; e.target.textContent = t(show ? 'hide' : 'show'); };
