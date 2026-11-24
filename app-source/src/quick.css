@@ -54,3 +54,8 @@ html .top{padding-top:calc(14px + env(safe-area-inset-top,0px))}
 .device-actions.one{display:grid;grid-template-columns:1fr;gap:16px;margin-top:24px}.device-actions.one .btn{min-height:48px;width:100%}
 #df #del{min-height:48px;margin-top:24px;background:#c0392b;color:#fff;border:0}
 @media(max-width:560px){#sf{padding:16px}}
+/* iPhone date input containment */
+input[type=date]{display:block;min-width:0;max-width:100%;width:100%;box-sizing:border-box;-webkit-appearance:none;appearance:none;min-height:46px;text-align:start}
+input[type=date]::-webkit-date-and-time-value{min-width:0;text-align:start;margin:0}
+input[type=date]::-webkit-datetime-edit{min-width:0;max-width:100%;padding:0}
+#af label,.dialog label,form label{min-width:0;max-width:100%}

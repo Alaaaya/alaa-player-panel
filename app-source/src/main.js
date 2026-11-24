@@ -180,7 +180,7 @@ function devRow(d, i) {
 function renderList() {
   const q = state.q.toLowerCase();
   const list = state.ds.filter((d) => (state.filter === 'all' || d.st === state.filter || (state.filter === 'inactive' && d.st === 'pending')) &&
-    (!q || [d.device_code, d.mac, d.customer, d.note].some((v) => (v || '').toLowerCase().includes(q))));
+    (!q || [d.device_code, d.customer, d.note].some((v) => (v || '').toLowerCase().includes(q))));
   $('#listbox').innerHTML = list.length ? list.map(devRow).join('')
     : `<div class="empty rise">${emptyArt}<h3>${t(state.ds.length ? 'noMatch' : 'empty')}</h3><p class="muted">${t(state.ds.length ? 'noMatchSub' : 'emptySub')}</p></div>`;
   app.querySelectorAll('[data-f]').forEach((b) => b.classList.toggle('on', b.dataset.f === state.filter));
@@ -230,7 +230,7 @@ function renderReseller(devicesOnly) {
     ['x', 'c-red', t('expired'), expired, trend(expWeek, t('thisWeek'), true)],
   ];
   const q = (state.q || '').toLowerCase();
-  const rows = ds.filter((d) => !q || [d.device_code, d.mac, d.customer].some((v) => (v || '').toLowerCase().includes(q)));
+  const rows = ds.filter((d) => !q || [d.device_code, d.customer].some((v) => (v || '').toLowerCase().includes(q)));
   const shown = devicesOnly ? rows : rows.slice(0, 8);
   const table = `<section class="rs-card rs-table rise" style="--d:360ms">
       <div class="rs-th"><h3>${t(devicesOnly ? 'nav_devices' : 'recent')}</h3>
@@ -335,7 +335,6 @@ function addDeviceDialog() {
     <h2>${t('addDevice')}</h2>
     <form id="af">
       <label>${t('deviceCode')}<input name="device_code" required dir="ltr" class="mono" autocapitalize="characters"></label>
-      <label>${t('mac')}<input name="mac" dir="ltr" class="mono" placeholder="00:1A:79:..."></label>
       <label>${t('customer')}<input name="customer"></label>
       <label>${t('expiry')}<input name="expires_at" type="date"></label>
       <label class="switch"><input type="checkbox" name="active" checked><span></span>${t('activeToggle')}</label>
@@ -346,7 +345,7 @@ function addDeviceDialog() {
       const f = new FormData(e.target);
       const code = f.get('device_code').trim().toUpperCase();
       if (!code) return toast(t('required'), true);
-      const row = { device_code: code, mac: f.get('mac') || null, customer: f.get('customer') || null, active: !!f.get('active'),
+      const row = { device_code: code, customer: f.get('customer') || null, active: !!f.get('active'),
         expires_at: f.get('expires_at') ? new Date(f.get('expires_at') + 'T23:59:59').toISOString() : null };
       const { data, error } = await sb.from('devices').insert(row).select().single();
       if (error) return toast(error.code === '23505' ? t('exists') : error.message, true);
@@ -418,7 +417,6 @@ async function renderDevice(id) {
     <form id="df" class="card rise dsec" data-panel="info" hidden style="--d:0ms">
       <div class="grid2">
         <label>${t('customer')}<input name="customer" value="${esc(d.customer)}"></label>
-        <label>${t('mac')}<input name="mac" value="${esc(d.mac)}" dir="ltr" class="mono"></label>
       </div>
       <label>${t('note')}<textarea name="note" rows="2">${esc(d.note)}</textarea></label>
       ${d.model ? `<p class="muted sm">${t('model')}: ${esc(d.model)}</p>` : ''}
@@ -451,7 +449,7 @@ async function renderDevice(id) {
     toast(t('saved')); renderDevice(id);
   });
   saveFields('#sf', (f) => ({ active: !!f.get('active'), expires_at: f.get('expires_at') ? new Date(f.get('expires_at') + 'T23:59:59').toISOString() : null }));
-  saveFields('#df', (f) => ({ customer: f.get('customer') || null, mac: f.get('mac') || null, note: f.get('note') || null }));
+  saveFields('#df', (f) => ({ customer: f.get('customer') || null, note: f.get('note') || null }));
   $('#del').onclick = (e) => deleteDevice(d, e.currentTarget);
   $('#hide-categories').onclick = () => { collapseSections(); openCategories({sb,device:d,playlists:pls||[]}); };
   const openNew = () => plErr ? toast(t('plLoadErr'), true) : playlistDialog(id, null, (pls || []).length);
